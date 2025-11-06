@@ -20,8 +20,11 @@ class CreateSessionRequest extends AbstractRequest implements RequestInterface
      */
     public function getData(): array
     {
+        // 优先使用外部传入的type，没有则回退为'purchase'
+        $type = $this->getParameter('type') ?: 'purchase';
+
         $data = [
-            'type' => 'purchase',
+            'type' => $type,
             'currency' => $this->getCurrency(),
             'merchantReference' => substr((string) $this->getMerchantReference(), 0, 64),
             'storeCard' => 0,

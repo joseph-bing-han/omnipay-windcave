@@ -221,7 +221,25 @@ abstract class AbstractRequest extends CommonAbstractRequest
 
         // 编码请求体：JSON 或 x-www-form-urlencoded（支持数组编码）
         if ($this->wantsJson()) {
-            $body = json_encode($data) ?: null;
+            // 如果已经是JSON字符串，则不要再次编码，避免双重编码导致字段丢失
+            if (is_string($data)) {
+                $trimmed = ltrim($data);
+                $looksJsonObjectOrArray = $trimmed !== '' && ($trimmed[0] === '{' || $trimmed[0] === '[');
+                if ($looksJsonObjectOrArray) {
+                    json_decode($data, true);
+                    if (json_last_error() === JSON_ERROR_NONE) {
+                        $body = $data;
+                    } else {
+                        // 非合法JSON字符串，按普通字符串处理为JSON编码
+                        $body = json_encode($data) ?: null;
+                    }
+                } else {
+                    // 普通字符串，编码为JSON
+                    $body = json_encode($data) ?: null;
+                }
+            } else {
+                $body = json_encode($data) ?: null;
+            }
         } else {
             $body = is_array($data) ? http_build_query($data) : $data;
             $body = $body !== '' ? $body : null;
