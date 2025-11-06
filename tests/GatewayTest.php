@@ -38,6 +38,7 @@ class GatewayTest extends GatewayTestCase
 
         $this->assertInstanceOf(CreateSessionRequest::class, $request);
         $this->assertSame('10.00', $request->getAmount());
+        $request->setCardholderEmail('john@example.com');
 
         $data = $request->getData();
 
@@ -56,6 +57,7 @@ class GatewayTest extends GatewayTestCase
         $money = new Money(1000, new Currency('AUD'));
 
         $request->setMoney($money);
+        $request->setCardholderEmail('john@example.com');
 
         $this->assertInstanceOf(CreateSessionRequest::class, $request);
         $this->assertSame($money, $request->getAmount());

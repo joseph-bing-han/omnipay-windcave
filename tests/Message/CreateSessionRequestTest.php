@@ -31,6 +31,7 @@ class CreateSessionRequestTest extends TestCase
     public function testGetData(): void
     {
         $this->request->setMerchantReference('ABC123');
+        $this->request->setCardholderEmail('john@example.com');
 
         $data = $this->request->getData();
 
@@ -39,5 +40,30 @@ class CreateSessionRequestTest extends TestCase
         $this->assertEquals('NZD', $data['currency']);
         $this->assertEquals('ABC123', $data['merchantReference']);
         $this->assertEquals(0, $data['storeCard']);
+        $this->assertArrayHasKey('cardholder', $data);
+        $this->assertEquals('john@example.com', $data['cardholder']['emailAddress']);
+    }
+
+    public function testGetDataWithPhoneOnly(): void
+    {
+        $this->request->setMerchantReference('XYZ999');
+        $this->request->setCardholderPhone('+64-21-000-0000');
+
+        $data = $this->request->getData();
+
+        $this->assertArrayHasKey('cardholder', $data);
+        $this->assertEquals('+64-21-000-0000', $data['cardholder']['phoneNumber']);
+        $this->assertArrayNotHasKey('emailAddress', $data['cardholder']);
+    }
+
+    public function testGetDataThrowsWhenNoEmailOrPhone(): void
+    {
+        $this->request->setMerchantReference('NO-CONTACT');
+        $this->request->setEnforce3dsContact(true);
+
+        $this->expectException(\Omnipay\Common\Exception\InvalidRequestException::class);
+        $this->expectExceptionMessage('Windcave 3DS requires either cardholder email or phone');
+
+        $this->request->getData();
     }
 }

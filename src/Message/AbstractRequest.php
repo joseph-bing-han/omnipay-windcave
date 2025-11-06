@@ -118,6 +118,64 @@ abstract class AbstractRequest extends CommonAbstractRequest
         return $this->setParameter('merchantReference', $value);
     }
 
+    /**
+     * 获取持卡人邮箱（优先使用参数，其次尝试从CreditCard读取）
+     */
+    public function getCardholderEmail(): ?string
+    {
+        $email = $this->getParameter('cardholderEmail');
+        if ($email !== null && $email !== '') {
+            return $email;
+        }
+
+        $card = $this->getCard();
+        return $card ? $card->getEmail() : null;
+    }
+
+    public function setCardholderEmail(string $value): self
+    {
+        return $this->setParameter('cardholderEmail', $value);
+    }
+
+    /**
+     * 获取持卡人电话（优先使用参数，其次尝试从CreditCard读取）
+     */
+    public function getCardholderPhone(): ?string
+    {
+        $phone = $this->getParameter('cardholderPhone');
+        if ($phone !== null && $phone !== '') {
+            return $phone;
+        }
+
+        $card = $this->getCard();
+        if ($card) {
+            // 优先billing phone，回退到通用phone
+            $billingPhone = method_exists($card, 'getBillingPhone') ? $card->getBillingPhone() : null;
+            return $billingPhone ?: (method_exists($card, 'getPhone') ? $card->getPhone() : null);
+        }
+
+        return null;
+    }
+
+    public function setCardholderPhone(string $value): self
+    {
+        return $this->setParameter('cardholderPhone', $value);
+    }
+
+    /**
+     * 是否强制要求提供cardholder email或phone（二选一）
+     */
+    public function getEnforce3dsContact(): bool
+    {
+        $value = $this->getParameter('enforce3dsContact');
+        return $value === null ? true : (bool) $value;
+    }
+
+    public function setEnforce3dsContact(bool $value): self
+    {
+        return $this->setParameter('enforce3dsContact', $value);
+    }
+
     abstract public function getContentType(): ?string;
 
     public function setContentType(string $value): self
@@ -161,8 +219,13 @@ abstract class AbstractRequest extends CommonAbstractRequest
         $headers = $this->getRequestHeaders();
         $headers['Authorization'] = 'Basic ' . base64_encode($username . ':' . $apiKey);
 
-        // If wantsJson is false assume $data is a string and pass it directly.
-        $body = (($this->wantsJson()) ? json_encode($data) : $data) ?: null;
+        // 编码请求体：JSON 或 x-www-form-urlencoded（支持数组编码）
+        if ($this->wantsJson()) {
+            $body = json_encode($data) ?: null;
+        } else {
+            $body = is_array($data) ? http_build_query($data) : $data;
+            $body = $body !== '' ? $body : null;
+        }
 
         $httpResponse = $this->httpClient->request(
             $this->getHttpMethod(),

@@ -36,6 +36,24 @@ class CreateSessionRequest extends AbstractRequest implements RequestInterface
             $data['amount'] = $this->getAmount();
         }
 
+        // 3DS 信息校验：至少提供邮箱或电话
+        $email = $this->getCardholderEmail();
+        $phone = $this->getCardholderPhone();
+
+        if ($this->getEnforce3dsContact() && !$email && !$phone) {
+            throw new InvalidRequestException(
+                'Windcave 3DS requires either cardholder email or phone (Visa requirement).'
+            );
+        }
+
+        // 按Windcave REST会话创建字段约定写入
+        if ($email || $phone) {
+            $data['cardholder'] = array_filter([
+                'emailAddress' => $email,
+                'phoneNumber'  => $phone,
+            ], static fn($v) => $v !== null && $v !== '');
+        }
+
         return $data;
     }
 

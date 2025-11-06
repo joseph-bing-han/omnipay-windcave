@@ -1,5 +1,5 @@
 {
-    "name": "digistorm/omnipay-windcave",
+    "name": "joseph-bing-han/omnipay-windcave",
     "type": "library",
     "description": "Windcave (Payment Express) REST API driver for the Omnipay payment processing library",
     "keywords": [
@@ -11,7 +11,7 @@
         "windcave",
         "payment express"
     ],
-    "homepage": "https://github.com/digistorm/omnipay-windcave",
+    "homepage": "https://github.com/joseph-bing-han/omnipay-windcave",
     "license": "MIT",
     "autoload": {
         "psr-4": { "Omnipay\\Windcave\\" : "src/" }
